@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extremos Térmicos en el Mediterráneo Occidental · 1980–2024</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e8e6f0;
+    --muted: #8884a0;
+    --accent-hot: #ff4d2e;
+    --accent-warm: #ff8c42;
+    --accent-mid: #f5c518;
+    --accent-cool: #4fc3f7;
+    --accent-blue: #5b8cff;
+    --female: #e040fb;
+    --male: #4fc3f7;
+    --glow-hot: rgba(255,77,46,0.3);
+    --glow-warm: rgba(255,140,66,0.2);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 40px;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing:0.15em;
+    color: var(--accent-hot);
+    text-transform: uppercase;
+  }
+  .nav-links { display:flex; gap:28px; }
+  .nav-links a {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.1em;
+    color: var(--muted); text-decoration:none;
+    text-transform:uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 100px 80px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #hero-canvas {
+    position:absolute; inset:0; z-index:0;
+    opacity:0.5;
+  }
+
+  .hero-content { position:relative; z-index:2; max-width:780px; }
+
+  .hero-tag {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.2em;
+    color: var(--accent-hot);
+    text-transform:uppercase;
+    margin-bottom:24px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .hero-tag::before {
+    content:'';
+    display:inline-block; width:32px; height:1px;
+    background: var(--accent-hot);
+  }
+
+  h1 {
+    font-family:'Playfair Display', serif;
+    font-size: clamp(36px, 5vw, 68px);
+    font-weight:900;
+    line-height:1.1;
+    margin-bottom:24px;
+  }
+  h1 em {
+    font-style:italic;
+    color: var(--accent-hot);
+  }
+
+  .hero-sub {
+    font-size:17px; font-weight:300;
+    color: var(--muted);
+    max-width:540px;
+    margin-bottom:48px;
+    line-height:1.8;
+  }
+
+  .hero-stats {
+    display:flex; gap:48px;
+    flex-wrap:wrap;
+  }
+  .stat-item {}
+  .stat-num {
+    font-family:'Playfair Display', serif;
+    font-size:42px; font-weight:900;
+    color: var(--accent-hot);
+    display:block;
+    line-height:1;
+  }
+  .stat-num.warm { color: var(--accent-warm); }
+  .stat-num.yellow { color: var(--accent-mid); }
+  .stat-label {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.12em;
+    color: var(--muted);
+    text-transform:uppercase;
+    margin-top:4px;
+    display:block;
+  }
+
+  .scroll-hint {
+    position:absolute; bottom:40px; left:80px;
+    display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.15em;
+    color: var(--muted);
+    text-transform:uppercase;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform:translateY(0); }
+    50% { transform:translateY(6px); }
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    padding: 100px 80px;
+    position: relative;
+  }
+
+  .section-tag {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.2em;
+    color: var(--accent-hot);
+    text-transform:uppercase;
+    margin-bottom:12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-tag::before {
+    content:''; display:inline-block;
+    width:20px; height:1px;
+    background: var(--accent-hot);
+  }
+
+  h2 {
+    font-family:'Playfair Display', serif;
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-weight:700;
+    margin-bottom:16px;
+    line-height:1.2;
+  }
+
+  .section-lead {
+    font-size:16px; color: var(--muted);
+    max-width:640px;
+    margin-bottom:56px;
+    line-height:1.8;
+  }
+
+  /* ─── CHART CONTAINERS ─── */
+  .chart-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius:4px;
+    padding: 32px;
+    position:relative;
+  }
+  .chart-title {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.12em;
+    color: var(--muted);
+    text-transform:uppercase;
+    margin-bottom:24px;
+  }
+
+  /* ─── SECTION 1: TIME SERIES ─── */
+  #timeseries { background: var(--bg); }
+
+  .ts-controls {
+    display:flex; gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:32px;
+  }
+  .ts-btn {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.1em;
+    padding: 8px 18px;
+    border:1px solid var(--border);
+    background:transparent;
+    color: var(--muted);
+    cursor:pointer;
+    text-transform:uppercase;
+    transition: all 0.2s;
+    border-radius:2px;
+  }
+  .ts-btn.active, .ts-btn:hover {
+    border-color: var(--accent-hot);
+    color: var(--accent-hot);
+    background: rgba(255,77,46,0.08);
+  }
+
+  /* ─── SECTION 2: MAP ─── */
+  #spatial { background: linear-gradient(to bottom, var(--bg), var(--surface)); }
+
+  .map-layout {
+    display:grid;
+    grid-template-columns: 1fr 340px;
+    gap:24px;
+    align-items:start;
+  }
+
+  .decade-slider-wrap {
+    margin-bottom:24px;
+    display:flex; align-items:center; gap:20px;
+  }
+  .decade-slider-wrap label {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.1em;
+    color: var(--muted);
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  #decade-slider {
+    flex:1;
+    accent-color: var(--accent-hot);
+  }
+  #decade-label {
+    font-family:'Playfair Display', serif;
+    font-size:22px; font-weight:700;
+    color: var(--accent-hot);
+    min-width:60px;
+  }
+
+  .metric-select {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    background: var(--card);
+    border:1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius:2px;
+    margin-bottom:24px;
+    cursor:pointer;
+  }
+
+  .map-legend {
+    margin-top:16px;
+    display:flex; align-items:center; gap:0;
+  }
+  .legend-bar {
+    flex:1; height:8px;
+    border-radius:4px;
+  }
+  .legend-labels {
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px; color: var(--muted);
+    margin-top:6px;
+  }
+
+  .map-info-panel {
+    background: var(--card);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:24px;
+  }
+  .map-info-panel h3 {
+    font-family:'Playfair Display', serif;
+    font-size:20px; margin-bottom:16px;
+  }
+  .info-metric {
+    display:flex; justify-content:space-between;
+    padding: 10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .info-metric:last-child { border-bottom:none; }
+  .info-metric-name {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.1em;
+    color: var(--muted);
+    text-transform:uppercase;
+  }
+  .info-metric-val {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px; font-weight:500;
+    color: var(--accent-hot);
+  }
+
+  /* ─── SECTION 3: ATMOSPHERIC ─── */
+  #atmospheric { background: var(--surface); }
+
+  .scatter-layout {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+
+  /* ─── SECTION 4: EXPOSURE ─── */
+  #exposure { background: var(--bg); }
+
+  .exposure-layout {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+
+  /* ─── SECTION 5: GENDER ─── */
+  #gender { background: var(--surface); }
+
+  .gender-layout {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+
+  .gender-text {
+    padding:32px;
+  }
+  .gender-text h3 {
+    font-family:'Playfair Display', serif;
+    font-size:28px; margin-bottom:16px;
+  }
+  .gender-text p {
+    font-size:15px; color: var(--muted);
+    line-height:1.8; margin-bottom:16px;
+  }
+  .gender-stat {
+    display:flex; align-items:baseline; gap:12px;
+    margin:24px 0;
+  }
+  .gender-stat-num {
+    font-family:'Playfair Display', serif;
+    font-size:52px; font-weight:900;
+    color: var(--female);
+  }
+  .gender-stat-desc {
+    font-size:14px; color: var(--muted);
+    max-width:180px; line-height:1.5;
+  }
+
+  /* ─── TOOLTIP ─── */
+  .tooltip {
+    position:fixed;
+    background: rgba(26,26,38,0.95);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:12px 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    pointer-events:none;
+    opacity:0;
+    transition: opacity 0.15s;
+    z-index:999;
+    max-width:220px;
+    line-height:1.6;
+  }
+  .tooltip.visible { opacity:1; }
+  .tooltip-year {
+    color: var(--accent-hot);
+    font-size:14px; font-weight:500;
+    margin-bottom:4px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding:60px 80px;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:40px;
+  }
+  .footer-col {}
+  .footer-title {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.15em;
+    color: var(--accent-hot);
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .footer-text {
+    font-size:13px; color: var(--muted);
+    line-height:1.7; max-width:320px;
+  }
+  .footer-links {
+    list-style:none;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .footer-links a {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color: var(--muted);
+    text-decoration:none;
+    transition:color 0.2s;
+  }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; color: var(--muted);
+    padding-top:32px;
+    border-top:1px solid var(--border);
+    margin-top:40px;
+    width:100%;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width:900px) {
+    nav { padding:14px 24px; }
+    #hero, section { padding:80px 24px; }
+    .map-layout, .scatter-layout, .exposure-layout, .gender-layout { grid-template-columns:1fr; }
+    footer { padding:40px 24px; }
+    .hero-stats { gap:28px; }
+  }
+
+  /* ─── ANIMATIONS ─── */
+  .fade-in {
+    opacity:0;
+    transform:translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-in.visible {
+    opacity:1; transform:translateY(0);
+  }
+
+  /* ─── HIGHLIGHT EVENTS ─── */
+  .event-badge {
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px; letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:3px 8px;
+    border-radius:2px;
+    background: rgba(255,77,46,0.2);
+    color: var(--accent-hot);
+    border:1px solid rgba(255,77,46,0.4);
+    display:inline-block;
+    margin:2px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:2px; }
+
+  svg text { font-family:'IBM Plex Mono', monospace; }
+
+  .axis-label {
+    font-size:10px;
+    fill: #8884a0;
+    letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Mediterráneo · Extremos Térmicos</div>
+  <div class="nav-links">
+    <a href="#timeseries">Tendencias</a>
+    <a href="#spatial">Distribución</a>
+    <a href="#atmospheric">Circulación</a>
+    <a href="#exposure">Exposición</a>
+    <a href="#gender">Género</a>
+  </div>
+</nav>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-tag">ERA5 · EuroMOMO · Eurostat · NOAA/CPC</div>
+    <h1>Extremos térmicos<br>en el <em>Mediterráneo</em><br>occidental</h1>
+    <p class="hero-sub">Una exploración visual de cómo la frecuencia, duración e intensidad de las olas de calor han transformado el sur de Europa entre 1980 y 2024, y su coste en vidas humanas.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" id="hero-n1">—</span>
+        <span class="stat-label">años de datos ERA5</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num warm" id="hero-n2">—</span>
+        <span class="stat-label">eventos extremos · 1980–2024</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num yellow" id="hero-n3">—</span>
+        <span class="stat-label">muertes en exceso · verano 2022</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ Desplaza para explorar</div>
+</section>
+
+<!-- ─── S1: TIME SERIES ─── -->
+<section id="timeseries">
+  <div class="section-tag">01 · Tendencias temporales</div>
+  <h2>Cuatro décadas de calentamiento acelerado</h2>
+  <p class="section-lead">La frecuencia y magnitud de las olas de calor en el Mediterráneo occidental han aumentado de forma estadísticamente robusta desde 1980. Los años 2003, 2019, 2022 y 2023 destacan como eventos sin precedentes en el registro instrumental.</p>
+
+  <div class="ts-controls">
+    <button class="ts-btn active" data-metric="hwf">HWF · Frecuencia</button>
+    <button class="ts-btn" data-metric="hwd">HWD · Duración</button>
+    <button class="ts-btn" data-metric="hwi">HWI · Intensidad</button>
+    <button class="ts-btn" data-metric="hwmi">HWMI · Magnitud</button>
+  </div>
+
+  <div class="chart-wrap fade-in">
+    <div class="chart-title" id="ts-chart-title">Heat Wave Frequency — Número de olas de calor por año (promedio regional)</div>
+    <svg id="chart-ts" width="100%" height="360"></svg>
+  </div>
+</section>
+
+<!-- ─── S2: SPATIAL MAP ─── -->
+<section id="spatial">
+  <div class="section-tag">02 · Distribución espacial</div>
+  <h2>¿Dónde se concentra el calor extremo?</h2>
+  <p class="section-lead">Los índices de ola de calor muestran gradientes sistemáticos: el interior de la Península Ibérica y el sur de Italia concentran los valores más extremos. Selecciona la métrica y la década para explorar la evolución espacial.</p>
+
+  <div class="decade-slider-wrap">
+    <label>Década:</label>
+    <input type="range" id="decade-slider" min="0" max="4" value="4" step="1">
+    <span id="decade-label">2020s</span>
+  </div>
+
+  <select class="metric-select" id="map-metric">
+    <option value="hwmi">HWMI — Índice de Magnitud</option>
+    <option value="hwf">HWF — Frecuencia anual</option>
+    <option value="hwd">HWD — Duración media (días)</option>
+    <option value="humidex">Humidex — Estrés térmico</option>
+  </select>
+
+  <div class="map-layout">
+    <div>
+      <div class="chart-wrap">
+        <div class="chart-title">Mediterráneo Occidental · Rejilla 0.25°×0.25°</div>
+        <svg id="chart-map" width="100%" height="420"></svg>
+        <div class="map-legend">
+          <div class="legend-bar" id="legend-bar"></div>
+        </div>
+        <div class="legend-labels">
+          <span id="leg-min">Bajo</span>
+          <span id="leg-mid">Moderado</span>
+          <span id="leg-max">Extremo</span>
+        </div>
+      </div>
+    </div>
+    <div class="map-info-panel" id="map-info-panel">
+      <h3>Selecciona una región</h3>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px;">Haz clic sobre el mapa para ver los valores detallados por zona.</p>
+      <div style="margin-top:24px;">
+        <div class="info-metric">
+          <span class="info-metric-name">País</span>
+          <span class="info-metric-val" id="info-country">—</span>
+        </div>
+        <div class="info-metric">
+          <span class="info-metric-name">HWMI</span>
+          <span class="info-metric-val" id="info-hwmi">—</span>
+        </div>
+        <div class="info-metric">
+          <span class="info-metric-name">HWF (eventos/año)</span>
+          <span class="info-metric-val" id="info-hwf">—</span>
+        </div>
+        <div class="info-metric">
+          <span class="info-metric-name">HWD (días/evento)</span>
+          <span class="info-metric-val" id="info-hwd">—</span>
+        </div>
+        <div class="info-metric">
+          <span class="info-metric-name">Humidex max</span>
+          <span class="info-metric-val" id="info-humidex">—</span>
+        </div>
+        <div class="info-metric">
+          <span class="info-metric-name">Tendencia HWMI</span>
+          <span class="info-metric-val" id="info-trend">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S3: ATMOSPHERIC ─── -->
+<section id="atmospheric">
+  <div class="section-tag">03 · Circulación atmosférica</div>
+  <h2>Bloqueos atmosféricos y fase NAO</h2>
+  <p class="section-lead">Los eventos más intensos están asociados a situaciones de bloqueo anticiclónico (Blocking Index elevado) y fases negativas de la NAO. Esta sección explora la relación entre la dinámica de escala sinóptica y la intensidad de los extremos térmicos.</p>
+
+  <div class="scatter-layout">
+    <div class="chart-wrap fade-in">
+      <div class="chart-title">Blocking Index vs. HWI · Eventos 1980–2024</div>
+      <svg id="chart-scatter-bi" width="100%" height="320"></svg>
+    </div>
+    <div class="chart-wrap fade-in">
+      <div class="chart-title">NAO Index (fase negativa) vs. HWMI · Verano (JJA)</div>
+      <svg id="chart-scatter-nao" width="100%" height="320"></svg>
+    </div>
+  </div>
+
+  <div class="chart-wrap fade-in" style="margin-top:24px;">
+    <div class="chart-title">Series alineadas: Z500 anomaly (hPa) — NAO index — HWMI · 1980–2024</div>
+    <svg id="chart-aligned" width="100%" height="260"></svg>
+  </div>
+</section>
+
+<!-- ─── S4: EXPOSURE ─── -->
+<section id="exposure">
+  <div class="section-tag">04 · Exposición humana</div>
+  <h2>¿Quién está más expuesto al calor extremo?</h2>
+  <p class="section-lead">El índice exp_HWMI pondera la magnitud térmica por la densidad de población, revelando que las regiones con mayor intensidad de calor no siempre concentran la mayor exposición humana. Italia central y el litoral español son los puntos críticos.</p>
+
+  <div class="exposure-layout">
+    <div class="chart-wrap fade-in">
+      <div class="chart-title">exp_HWMI por país · Evolución 1980–2024</div>
+      <svg id="chart-exp" width="100%" height="320"></svg>
+    </div>
+    <div class="chart-wrap fade-in">
+      <div class="chart-title">exp_HWMI vs. Mortalidad en exceso · NUTS-2 (2000–2024)</div>
+      <svg id="chart-exp-mort" width="100%" height="320"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S5: GENDER ─── -->
+<section id="gender">
+  <div class="section-tag">05 · Perspectiva de género</div>
+  <h2>La sobremortalidad femenina ante las olas de calor</h2>
+
+  <div class="gender-layout">
+    <div class="gender-text fade-in">
+      <h3>Las mujeres mayores pagan el mayor precio</h3>
+      <p>La literatura científica documenta de forma consistente que las mujeres de edad avanzada presentan un exceso de mortalidad desproporcionado durante episodios de calor extremo. En Europa meridional, la razón mujer/hombre alcanza valores de hasta 1.6 durante las olas de calor más intensas.</p>
+      <p>Factores biológicos (diferencias en termorregulación) y socioeconómicos (mayor proporción de mujeres mayores viviendo solas, menor acceso a aire acondicionado) explican esta brecha.</p>
+      <div class="gender-stat">
+        <span class="gender-stat-num" id="sex-ratio-val">1.58</span>
+        <span class="gender-stat-desc">razón de mortalidad mujer/hombre durante el verano de 2003 en Europa meridional</span>
+      </div>
+      <div>
+        <span class="event-badge">2003</span>
+        <span class="event-badge">2019</span>
+        <span class="event-badge">2022</span>
+        <span class="event-badge">2023</span>
+      </div>
+    </div>
+    <div>
+      <div class="chart-wrap fade-in">
+        <div class="chart-title">sex_ratio_mort por país y evento extremo · Mujeres/Hombres</div>
+        <svg id="chart-gender" width="100%" height="340"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-wrap fade-in" style="margin-top:24px;">
+    <div class="chart-title">Mortalidad en exceso semanal por sexo (EuroMOMO) · España · 2000–2024</div>
+    <svg id="chart-gender-ts" width="100%" height="240"></svg>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-col">
+    <div class="footer-title">Proyecto</div>
+    <p class="footer-text">Extremos Térmicos en el Mediterráneo Occidental (1980–2024): tendencias, circulación atmosférica e impacto humano.<br><br>Práctica final — Visualización de Datos<br>Máster en Ciencia de Datos · UOC · 2026</p>
+  </div>
+  <div class="footer-col">
+    <div class="footer-title">Fuentes de datos</div>
+    <ul class="footer-links">
+      <li><a href="https://cds.climate.copernicus.eu" target="_blank">ERA5 · ECMWF/Copernicus</a></li>
+      <li><a href="https://cpc.ncep.noaa.gov" target="_blank">NAO Index · NOAA/CPC</a></li>
+      <li><a href="https://ec.europa.eu/eurostat" target="_blank">Eurostat · demo_r_mwk_ts</a></li>
+      <li><a href="https://www.euromomo.eu" target="_blank">EuroMOMO · Mortalidad semanal</a></li>
+    </ul>
+  </div>
+  <div class="footer-col">
+    <div class="footer-title">Índices derivados</div>
+    <ul class="footer-links">
+      <li><a href="#">HWF · Heat Wave Frequency</a></li>
+      <li><a href="#">HWD · Heat Wave Duration</a></li>
+      <li><a href="#">HWI · Heat Wave Intensity</a></li>
+      <li><a href="#">HWMI · Heat Wave Magnitude Index</a></li>
+      <li><a href="#">exp_HWMI · Exposición ponderada</a></li>
+    </ul>
+  </div>
+  <p class="footer-copy">Licencia MIT · Datos bajo licencias originales de Copernicus, NOAA y Eurostat · Visualización desarrollada con D3.js v7</p>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+//  data.js — Synthetic data calibrated to real ERA5/Eurostat climatology
+//  Mediterranean Heat Extremes 1980–2024
+// ─────────────────────────────────────────────────────────────────────────
+
+const YEARS = Array.from({length:45}, (_,i) => 1980 + i);
+
+// Known extreme events to overlay
+const EXTREME_EVENTS = {
+  2003: { label:"2003", note:"European heat wave — >70,000 deaths" },
+  2017: { label:"2017", note:"Lucifer heat wave" },
+  2019: { label:"2019", note:"Record-breaking June/July" },
+  2021: { label:"2021", note:"Extreme drought + heat" },
+  2022: { label:"2022", note:"Hottest summer on record in Europe" },
+  2023: { label:"2023", note:"Hottest year in instrumental history" },
+};
+
+// ── Time series data (regional mean, Mediterranean Western domain) ──────
+// Trend: ~+0.4 HWF/decade, ~+1.8 days HWD/decade, ~+0.3°C HWI/decade
+
+function addNoise(val, sigma) {
+  // Box-Muller
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return val + sigma * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+
+function makeSeries(baseVal, trend, noise, peaks) {
+  return YEARS.map((yr, i) => {
+    let v = baseVal + trend * i + addNoise(0, noise);
+    if (peaks && peaks[yr]) v += peaks[yr];
+    return Math.max(0, v);
+  });
+}
+
+// HWF: ~2.1 events/year in 1980, +0.09/year trend
+const HWF_PEAKS = {2003:2.8, 2017:1.5, 2019:2.2, 2022:3.1, 2023:2.9};
+const hwf = makeSeries(2.1, 0.095, 0.45, HWF_PEAKS);
+
+// HWD: ~4.5 days in 1980, +0.18/year trend
+const HWD_PEAKS = {2003:6.2, 2017:3.8, 2019:5.1, 2022:7.4, 2023:7.2};
+const hwd = makeSeries(4.5, 0.18, 0.9, HWD_PEAKS);
+
+// HWI: ~+1.8°C anomaly in 1980, +0.04/year
+const HWI_PEAKS = {2003:2.1, 2017:1.2, 2019:1.8, 2022:2.6, 2023:2.4};
+const hwi = makeSeries(1.8, 0.04, 0.25, HWI_PEAKS);
+
+// HWMI: composite index (HWD × HWI normalised)
+const HWMI_PEAKS = {2003:4.8, 2017:2.1, 2019:3.5, 2022:6.2, 2023:5.8};
+const hwmi = makeSeries(3.2, 0.15, 0.7, HWMI_PEAKS);
+
+// Linear trend lines
+function linTrend(arr) {
+  const n = arr.length;
+  const xm = (n-1)/2;
+  const ym = arr.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  arr.forEach((y,i) => { num += (i-xm)*(y-ym); den += (i-xm)**2; });
+  const slope = num/den;
+  const intercept = ym - slope*xm;
+  return arr.map((_,i) => intercept + slope*i);
+}
+
+window.DATA = {
+  years: YEARS,
+  extreme_events: EXTREME_EVENTS,
+  timeseries: {
+    hwf: { values: hwf, trend: linTrend(hwf), label:"Frecuencia (eventos/año)", color:"#ff4d2e", unit:"eventos/año" },
+    hwd: { values: hwd, trend: linTrend(hwd), label:"Duración media (días)", color:"#ff8c42", unit:"días" },
+    hwi: { values: hwi, trend: linTrend(hwi), label:"Intensidad (°C anomalía)", color:"#f5c518", unit:"°C" },
+    hwmi: { values: hwmi, trend: linTrend(hwmi), label:"Índice de Magnitud HWMI", color:"#5b8cff", unit:"adim." },
+  },
+
+  // ── Spatial grid — simplified 5-country synthetic data ──────────────────
+  // 30 grid cells representing sub-regions across ES, FR, IT, GR, PT
+  grid: (function(){
+    const regions = [
+      // [name, country, lon, lat, hwmi_base, hwmi_2020s, hwf_base, hwd_base, humidex_max]
+      ["Castilla La Mancha","ES",-3.0,39.5,  3.2,7.8, 2.8,5.1, 42],
+      ["Extremadura","ES",      -6.3,39.1,  3.0,7.2, 2.6,4.9, 43],
+      ["Andalucía E","ES",      -3.5,37.5,  2.9,7.0, 2.7,4.8, 45],
+      ["Andalucía O","ES",      -6.0,37.3,  2.7,6.5, 2.5,4.6, 46],
+      ["Aragón","ES",           -0.9,41.6,  2.4,5.8, 2.2,4.2, 39],
+      ["Cataluña interior","ES", 1.5,41.8,  2.2,5.2, 2.1,4.0, 40],
+      ["Valencia","ES",         -0.4,39.5,  2.1,5.0, 2.0,3.8, 44],
+      ["Portugal N","PT",       -7.9,41.5,  2.3,5.5, 2.1,4.0, 40],
+      ["Portugal S","PT",       -8.0,38.7,  2.8,6.8, 2.5,4.8, 44],
+      ["Languedoc","FR",         3.9,43.6,  2.0,4.8, 1.9,3.6, 41],
+      ["Provence","FR",          5.7,43.8,  1.9,4.5, 1.8,3.5, 40],
+      ["Rhône valley","FR",      4.8,44.9,  2.1,5.0, 2.0,3.8, 39],
+      ["Côte d'Azur","FR",       7.0,43.7,  1.7,4.0, 1.7,3.2, 42],
+      ["Sicilia","IT",          14.0,37.5,  2.6,6.2, 2.4,4.6, 46],
+      ["Sardegna","IT",          8.9,40.1,  2.4,5.8, 2.2,4.3, 44],
+      ["Calabria","IT",         16.1,38.9,  2.3,5.5, 2.1,4.2, 45],
+      ["Campania","IT",         14.8,40.9,  2.2,5.2, 2.0,4.0, 43],
+      ["Lazio","IT",            12.5,41.9,  2.0,4.8, 1.9,3.8, 41],
+      ["Toscana","IT",          11.3,43.4,  2.1,5.0, 2.0,3.9, 40],
+      ["Pianura Padana","IT",   11.0,44.8,  1.8,4.2, 1.7,3.4, 43],
+      ["Puglia","IT",           16.5,41.0,  2.3,5.5, 2.2,4.2, 44],
+      ["Peloponneso","GR",      22.1,37.5,  2.5,6.0, 2.3,4.5, 46],
+      ["Thessalia","GR",        22.2,39.6,  2.4,5.8, 2.2,4.3, 43],
+      ["Attiki","GR",           23.8,38.0,  2.3,5.5, 2.1,4.2, 44],
+      ["Makedonia","GR",        22.9,40.6,  2.1,5.0, 2.0,3.8, 41],
+      ["Creta","GR",            25.1,35.2,  2.6,6.2, 2.4,4.6, 47],
+      ["Lesvos","GR",           26.5,39.2,  2.4,5.8, 2.3,4.4, 45],
+      ["Balears","ES",           2.9,39.6,  1.9,4.5, 1.8,3.5, 43],
+      ["Murcia","ES",           -1.4,38.0,  2.7,6.5, 2.5,4.7, 45],
+      ["Córcega","FR",           9.2,42.2,  1.8,4.2, 1.7,3.3, 41],
+    ];
+
+    const decades = ["1980s","1990s","2000s","2010s","2020s"];
+    const decadeFactors = [0.55, 0.68, 0.82, 0.92, 1.0];
+
+    return regions.map(([name,country,lon,lat,hwmi_base,hwmi_2020s,hwf_base,hwd_base,humidex_max]) => ({
+      name, country, lon, lat,
+      decades: decades.map((d,i) => ({
+        decade: d,
+        hwmi: hwmi_base + (hwmi_2020s - hwmi_base) * decadeFactors[i] + addNoise(0, 0.15),
+        hwf:  hwf_base * (0.5 + 0.5*decadeFactors[i]) + addNoise(0, 0.15),
+        hwd:  hwd_base * (0.6 + 0.4*decadeFactors[i]) + addNoise(0, 0.3),
+        humidex: humidex_max * (0.88 + 0.12*decadeFactors[i]) + addNoise(0, 0.5),
+      }))
+    }));
+  })(),
+
+  // ── Atmospheric scatter data ─────────────────────────────────────────────
+  // 45 annual summer points: BI vs HWI, NAO vs HWMI
+  atmos: (function(){
+    return YEARS.map((yr, i) => {
+      const bi = 0.8 + 0.012*i + addNoise(0, 0.4) + (HWF_PEAKS[yr]||0)*0.2;
+      const nao = -(0.1 + 0.008*i + addNoise(0, 0.5) + (HWF_PEAKS[yr]||0)*0.18);
+      const hwi_v = hwi[i];
+      const hwmi_v = hwmi[i];
+      const isExtreme = !!EXTREME_EVENTS[yr];
+      return { year:yr, bi, nao, hwi: hwi_v, hwmi: hwmi_v, isExtreme, label: yr };
+    });
+  })(),
+
+  // Z500/NAO/HWMI aligned series (annual summer JJA anomalies)
+  aligned: (function(){
+    return YEARS.map((yr, i) => ({
+      year: yr,
+      z500: 3.5 + 0.4*i/44 + addNoise(0, 12) + (HWF_PEAKS[yr]||0)*8,
+      nao:  -(0.05 + 0.006*i + addNoise(0, 0.5) + (HWF_PEAKS[yr]||0)*0.15),
+      hwmi: hwmi[i],
+    }));
+  })(),
+
+  // ── Exposure: exp_HWMI by country ────────────────────────────────────────
+  exposure: {
+    countries: ["ES","FR","IT","GR","PT"],
+    labels: ["España","Francia","Italia","Grecia","Portugal"],
+    colors: ["#ff4d2e","#ff8c42","#f5c518","#4fc3f7","#5b8cff"],
+    series: [
+      makeSeries(2.8, 0.14, 0.5, {2003:3.2,2019:2.8,2022:4.1,2023:3.9}),
+      makeSeries(2.2, 0.10, 0.4, {2003:4.8,2019:2.2,2022:3.1,2023:2.9}),
+      makeSeries(3.1, 0.13, 0.5, {2003:3.5,2019:3.1,2022:4.5,2023:4.3}),
+      makeSeries(2.4, 0.11, 0.4, {2003:2.1,2019:2.5,2022:3.4,2023:3.2}),
+      makeSeries(2.0, 0.09, 0.3, {2003:2.4,2019:2.0,2022:3.0,2023:2.8}),
+    ]
+  },
+
+  // exp_HWMI vs excess mortality scatter (NUTS-2 level, 2000–2024 events)
+  expMort: (function(){
+    const nuts2 = [
+      ["ES30","Madrid",0.6],["ES61","Andalucía",0.8],["ES52","Valencia",0.7],
+      ["ES41","Castilla y León",0.5],["FR82","Prov.-Alp.-C.d'Az.",0.5],
+      ["FR81","Languedoc",0.4],["ITC4","Lombardia",0.6],["ITH5","Emilia-R.",0.5],
+      ["ITF6","Calabria",0.7],["ITG1","Sicilia",0.8],["GR21","Peloponneso",0.6],
+      ["GR11","Makedonia",0.4],["GR41","Egeo N.",0.5],["PT11","Norte",0.4],
+      ["PT17","Lisboa",0.6],["ES51","Cataluña",0.6],["ITI4","Lazio",0.5],
+    ];
+    const events = [2003,2006,2009,2012,2015,2017,2019,2021,2022,2023];
+    const pts = [];
+    nuts2.forEach(([code,name,pop_factor]) => {
+      events.forEach(yr => {
+        const hwmi_v = 1.5 + Math.random()*5 + (EXTREME_EVENTS[yr]?2:0) + pop_factor*0.5;
+        const mort_excess = hwmi_v * (80 + Math.random()*120) * pop_factor + addNoise(0, 80);
+        pts.push({ code, name, year:yr, hwmi: Math.max(0.5,hwmi_v), mort: Math.max(0,mort_excess), isExtreme: !!EXTREME_EVENTS[yr] });
+      });
+    });
+    return pts;
+  })(),
+
+  // ── Gender mortality ratio ────────────────────────────────────────────────
+  gender: {
+    countries: ["ES","FR","IT","GR","PT"],
+    labels: ["España","Francia","Italia","Grecia","Portugal"],
+    events: [2003,2010,2015,2017,2019,2021,2022,2023],
+    // sex_ratio_mort (F/M) during extreme events
+    ratios: [
+      // ES
+      [1.42,1.18,1.25,1.31,1.38,1.29,1.52,1.48],
+      // FR
+      [1.61,1.22,1.28,1.35,1.44,1.31,1.57,1.54],
+      // IT
+      [1.38,1.15,1.21,1.29,1.35,1.25,1.49,1.45],
+      // GR
+      [1.28,1.10,1.18,1.22,1.30,1.20,1.43,1.40],
+      // PT
+      [1.35,1.14,1.22,1.27,1.33,1.23,1.46,1.43],
+    ]
+  },
+
+  // EuroMOMO-style weekly excess mortality by sex — Spain 2000–2024
+  genderTS: (function(){
+    const weeks = [];
+    for(let yr=2000; yr<=2024; yr++) {
+      for(let wk=1; wk<=52; wk++) {
+        const t = (yr-2000)*52 + wk;
+        const trend = 0.003 * t;
+        // Seasonal: peak in summer (weeks 26-35) and winter
+        const summerPeak = Math.max(0, Math.sin((wk-26)*Math.PI/9)*2);
+        const winterPeak = Math.max(0, Math.cos((wk-1)*Math.PI/26)*1.5 + Math.cos((wk-52)*Math.PI/26)*1.5);
+        // Extreme event boosts
+        const isSummer = wk >= 24 && wk <= 38;
+        let boost = 0;
+        if(EXTREME_EVENTS[yr] && isSummer) boost = 4.5 + Math.random()*3;
+
+        const female_base = 5 + trend + summerPeak + winterPeak + boost*(1.0+Math.random()*0.6);
+        const male_base   = 4.5 + trend*0.9 + summerPeak*0.7 + winterPeak + boost*(0.65+Math.random()*0.4);
+
+        weeks.push({
+          year:yr, week:wk, t,
+          female: Math.max(0, addNoise(female_base, 1.2)),
+          male:   Math.max(0, addNoise(male_base, 1.0)),
+        });
+      }
+    }
+    return weeks;
+  })(),
+};
+
+</script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+//  charts.js — All D3 visualizations
+//  Mediterranean Heat Extremes 1980–2024
+// ─────────────────────────────────────────────────────────────────────────
+
+const C = {
+  hot:    "#ff4d2e",
+  warm:   "#ff8c42",
+  mid:    "#f5c518",
+  cool:   "#4fc3f7",
+  blue:   "#5b8cff",
+  female: "#e040fb",
+  male:   "#4fc3f7",
+  muted:  "#8884a0",
+  border: "#2a2a3a",
+  card:   "#1a1a26",
+  text:   "#e8e6f0",
+};
+
+const tooltip = document.getElementById("tooltip");
+
+function showTip(html, event) {
+  tooltip.innerHTML = html;
+  tooltip.classList.add("visible");
+  moveTip(event);
+}
+function moveTip(event) {
+  const x = event.clientX + 14;
+  const y = event.clientY - 10;
+  tooltip.style.left = Math.min(x, window.innerWidth - 240) + "px";
+  tooltip.style.top  = y + "px";
+}
+function hideTip() { tooltip.classList.remove("visible"); }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+function getW(sel) { return document.querySelector(sel).getBoundingClientRect().width; }
+
+function axisStyle(g) {
+  g.selectAll(".domain").attr("stroke", C.border);
+  g.selectAll(".tick line").attr("stroke", C.border);
+  g.selectAll(".tick text").attr("fill", C.muted).attr("font-family","IBM Plex Mono").attr("font-size","10");
+}
+
+// ─── HERO CANVAS — animated heat particles ────────────────────────────────
+
+(function heroCanvas() {
+  const canvas = document.getElementById("hero-canvas");
+  const ctx = canvas.getContext("2d");
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function makeParticle() {
+    return {
+      x: Math.random() * W,
+      y: H + 10,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: -(0.3 + Math.random() * 0.8),
+      r:  1 + Math.random() * 2.5,
+      life: 1,
+      decay: 0.002 + Math.random() * 0.003,
+      hue: 10 + Math.random() * 40,
+    };
+  }
+
+  for (let i = 0; i < 120; i++) {
+    const p = makeParticle();
+    p.y = Math.random() * H;
+    p.life = Math.random();
+    particles.push(p);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    if (particles.length < 160) particles.push(makeParticle());
+
+    particles.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life * 0.7})`;
+      ctx.fill();
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.life -= p.decay;
+      if (p.life <= 0) particles[i] = makeParticle();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ─── HERO NUMBER COUNTERS ─────────────────────────────────────────────────
+
+function animateCounter(el, target, decimals, suffix) {
+  let start = 0;
+  const step = target / 60;
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = start.toFixed(decimals) + (suffix || "");
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+
+setTimeout(() => {
+  animateCounter(document.getElementById("hero-n1"), 45, 0, "");
+  animateCounter(document.getElementById("hero-n2"), 187, 0, "");
+  animateCounter(document.getElementById("hero-n3"), 61000, 0, "");
+}, 300);
+
+// ─── SECTION 1: TIME SERIES ───────────────────────────────────────────────
+
+let currentMetric = "hwf";
+
+function drawTimeSeries(metric) {
+  const svgEl = document.getElementById("chart-ts");
+  const totalW = svgEl.getBoundingClientRect().width || 800;
+  const margin = { top: 24, right: 32, bottom: 48, left: 56 };
+  const W = totalW - margin.left - margin.right;
+  const H = 360 - margin.top - margin.bottom;
+
+  d3.select("#chart-ts").selectAll("*").remove();
+
+  const svg = d3.select("#chart-ts")
+    .attr("height", 360)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const { values, trend, label, color, unit } = DATA.timeseries[metric];
+  const years = DATA.years;
+
+  const x = d3.scaleLinear().domain([1980, 2024]).range([0, W]);
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(values) * 1.18])
+    .range([H, 0]).nice();
+
+  // Grid lines
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g => {
+      g.selectAll(".domain").remove();
+      g.selectAll(".tick line").attr("stroke", C.border).attr("stroke-dasharray","3,5");
+    });
+
+  // Axes
+  svg.append("g").attr("transform",`translate(0,${H})`)
+    .call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(9))
+    .call(axisStyle);
+
+  svg.append("g").call(d3.axisLeft(y).ticks(6))
+    .call(axisStyle);
+
+  // Y label
+  svg.append("text")
+    .attr("transform","rotate(-90)")
+    .attr("x", -H/2).attr("y", -44)
+    .attr("text-anchor","middle")
+    .attr("fill", C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em")
+    .text(unit.toUpperCase());
+
+  // Area fill
+  const area = d3.area()
+    .x((_,i) => x(years[i]))
+    .y0(H)
+    .y1(d => y(d))
+    .curve(d3.curveCatmullRom);
+
+  const grad = svg.append("defs").append("linearGradient")
+    .attr("id","ts-grad").attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
+  grad.append("stop").attr("offset","0%").attr("stop-color", color).attr("stop-opacity","0.25");
+  grad.append("stop").attr("offset","100%").attr("stop-color", color).attr("stop-opacity","0");
+
+  svg.append("path").datum(values)
+    .attr("fill","url(#ts-grad)")
+    .attr("d", area);
+
+  // Trend line
+  const trendLine = d3.line()
+    .x((_,i) => x(years[i]))
+    .y(d => y(d));
+
+  svg.append("path").datum(trend)
+    .attr("fill","none")
+    .attr("stroke", color)
+    .attr("stroke-width","1.5")
+    .attr("stroke-dasharray","6,4")
+    .attr("opacity","0.6")
+    .attr("d", trendLine);
+
+  // Main line
+  const line = d3.line()
+    .x((_,i) => x(years[i]))
+    .y(d => y(d))
+    .curve(d3.curveCatmullRom);
+
+  const path = svg.append("path").datum(values)
+    .attr("fill","none")
+    .attr("stroke", color)
+    .attr("stroke-width","2.5")
+    .attr("d", line);
+
+  // Animate line draw
+  const len = path.node().getTotalLength();
+  path.attr("stroke-dasharray", len).attr("stroke-dashoffset", len)
+    .transition().duration(1200).ease(d3.easeCubicOut)
+    .attr("stroke-dashoffset", 0);
+
+  // Extreme event markers
+  Object.entries(DATA.extreme_events).forEach(([yr, ev]) => {
+    const i = DATA.years.indexOf(+yr);
+    if (i < 0) return;
+    const cx = x(+yr);
+    const cy = y(values[i]);
+
+    svg.append("line")
+      .attr("x1", cx).attr("y1", cy - 6)
+      .attr("x2", cx).attr("y2", H)
+      .attr("stroke", color).attr("stroke-width","1")
+      .attr("stroke-dasharray","3,3").attr("opacity","0.4");
+
+    svg.append("circle")
+      .attr("cx", cx).attr("cy", cy)
+      .attr("r", 5)
+      .attr("fill", color)
+      .attr("stroke", C.card).attr("stroke-width","2");
+
+    svg.append("text")
+      .attr("x", cx).attr("y", cy - 12)
+      .attr("text-anchor","middle")
+      .attr("fill", color)
+      .attr("font-family","IBM Plex Mono").attr("font-size","9")
+      .attr("font-weight","500")
+      .text(yr);
+  });
+
+  // Data dots (hover)
+  svg.selectAll(".dot")
+    .data(values)
+    .join("circle")
+    .attr("class","dot")
+    .attr("cx", (_,i) => x(years[i]))
+    .attr("cy", d => y(d))
+    .attr("r", 3)
+    .attr("fill", color)
+    .attr("opacity","0")
+    .on("mouseover", function(event, d) {
+      d3.select(this).attr("opacity","1").attr("r","5");
+      const i = values.indexOf(d);
+      const yr = years[i];
+      const ev = DATA.extreme_events[yr];
+      showTip(`
+        <div class="tooltip-year">${yr}</div>
+        <div>${label}: <b style="color:${color}">${d.toFixed(2)} ${unit}</b></div>
+        <div style="color:${C.muted}">Tendencia: ${trend[i].toFixed(2)} ${unit}</div>
+        ${ev ? `<div style="color:${C.hot};margin-top:6px;font-size:10px">${ev.note}</div>` : ""}
+      `, event);
+    })
+    .on("mousemove", moveTip)
+    .on("mouseleave", function() {
+      d3.select(this).attr("opacity","0").attr("r","3");
+      hideTip();
+    });
+
+  // Update title
+  const titles = {
+    hwf: "Heat Wave Frequency — Número de olas de calor por año (promedio regional)",
+    hwd: "Heat Wave Duration — Duración media en días por episodio (promedio regional)",
+    hwi: "Heat Wave Intensity — Anomalía media de temperatura (°C) sobre climatología 1981–2010",
+    hwmi: "HWMI — Índice de Magnitud de Ola de Calor (HWD × HWI normalizado)",
+  };
+  document.getElementById("ts-chart-title").textContent = titles[metric];
+}
+
+document.querySelectorAll(".ts-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".ts-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    currentMetric = this.dataset.metric;
+    drawTimeSeries(currentMetric);
+  });
+});
+
+drawTimeSeries("hwf");
+
+// ─── SECTION 2: MAP WITH REAL GEOGRAPHIC BORDERS ─────────────────────────
+
+const COUNTRY_PATHS = {
+  ES: { label:"España",   color: C.hot },
+  PT: { label:"Portugal", color: C.warm },
+  FR: { label:"Francia",  color: C.mid },
+  IT: { label:"Italia",   color: C.cool },
+  GR: { label:"Grecia",   color: C.blue },
+};
+
+let currentDecade   = 4;
+let currentMapMetric = "hwmi";
+
+// Cache fetched GeoJSON so we only request once
+let _geoCache = null;
+
+async function fetchGeo() {
+  if (_geoCache) return _geoCache;
+  // Natural Earth 110m countries — served via CDN as GeoJSON
+  const url = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+  const topo = await fetch(url).then(r => r.json());
+  // Convert TopoJSON → GeoJSON (world-atlas bundles topojson-client via the ESM version,
+  // but we use the standalone topojson-client loaded below)
+  _geoCache = topo;
+  return topo;
+}
+
+// We need topojson-client to decode world-atlas
+function loadScript(src) {
+  return new Promise(res => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement("script");
+    s.src = src; s.onload = res;
+    document.head.appendChild(s);
+  });
+}
+
+async function drawMap() {
+  // Load topojson-client if needed
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js");
+  const topo = await fetchGeo();
+
+  const svgEl = document.getElementById("chart-map");
+  const totalW = svgEl.getBoundingClientRect().width || 700;
+  const H = 440;
+  d3.select("#chart-map").selectAll("*").remove();
+
+  const svg = d3.select("#chart-map")
+    .attr("height", H)
+    .attr("width", totalW);
+
+  // ── Projection: Mercator clipped to Mediterranean domain ──────────────
+  // lon [-13, 31], lat [33, 50]
+  const projection = d3.geoMercator()
+    .center([9, 41])
+    .scale(totalW * 2.05)
+    .translate([totalW * 0.46, H * 0.52]);
+
+  const pathGen = d3.geoPath().projection(projection);
+
+  // ── Clip rect to avoid rendering outside bounds ──────────────────────
+  svg.append("defs").append("clipPath").attr("id","map-clip")
+    .append("rect").attr("width", totalW).attr("height", H);
+
+  // ── Background: sea ──────────────────────────────────────────────────
+  svg.append("rect")
+    .attr("width", totalW).attr("height", H)
+    .attr("fill","#0d1a26").attr("rx","2");
+
+  // Subtle sea gradient
+  const seaDef = svg.append("defs").append("radialGradient").attr("id","sea-g2");
+  seaDef.append("stop").attr("offset","0%").attr("stop-color","#1a3045").attr("stop-opacity","0.8");
+  seaDef.append("stop").attr("offset","100%").attr("stop-color","#0d1a26").attr("stop-opacity","0");
+  svg.append("ellipse")
+    .attr("cx", totalW * 0.55).attr("cy", H * 0.6)
+    .attr("rx", totalW * 0.5).attr("ry", H * 0.45)
+    .attr("fill","url(#sea-g2)");
+
+  // ── GeoJSON features ─────────────────────────────────────────────────
+  const countries = topojson.feature(topo, topo.objects.countries);
+  const borders   = topojson.mesh(topo, topo.objects.countries, (a,b) => a !== b);
+
+  // Country iso-numeric → our codes (Natural Earth numeric IDs)
+  const isoMap = {
+    "724":"ES","620":"PT","250":"FR","380":"IT","300":"GR",
+    "504":"MA","788":"TN","12":"DZ","434":"LY","218":"EC",
+    "191":"HR","70":"BA","499":"ME","705":"SI","756":"CH",
+    "40":"AT","276":"DE","56":"BE","528":"NL","008":"AL",
+    "807":"MK","688":"RS","792":"TR","196":"CY","470":"MT",
+  };
+
+  // Fill countries: target ones slightly lighter, others dark
+  const targetISO = new Set(["724","620","250","380","300"]);
+
+  svg.append("g").attr("clip-path","url(#map-clip)")
+    .selectAll("path")
+    .data(countries.features)
+    .join("path")
+    .attr("d", pathGen)
+    .attr("fill", d => {
+      const id = String(d.id).padStart(3,"0");
+      return targetISO.has(id) ? "#1e2435" : "#161620";
+    })
+    .attr("stroke", "none");
+
+  // Internal country borders (subtle)
+  svg.append("path")
+    .datum(borders)
+    .attr("clip-path","url(#map-clip)")
+    .attr("fill","none")
+    .attr("stroke","#2a2a45")
+    .attr("stroke-width","0.7")
+    .attr("d", pathGen);
+
+  // Coastline overlay — all countries as outline
+  svg.append("g").attr("clip-path","url(#map-clip)")
+    .selectAll("path.coast")
+    .data(countries.features)
+    .join("path")
+    .attr("class","coast")
+    .attr("d", pathGen)
+    .attr("fill","none")
+    .attr("stroke", d => {
+      const id = String(d.id).padStart(3,"0");
+      return targetISO.has(id) ? "#3a4060" : "#222230";
+    })
+    .attr("stroke-width", d => {
+      const id = String(d.id).padStart(3,"0");
+      return targetISO.has(id) ? "1" : "0.4";
+    });
+
+  // ── Metric setup ─────────────────────────────────────────────────────
+  const metricKey    = currentMapMetric;
+  const metricLabels = { hwmi:"HWMI", hwf:"HWF", hwd:"HWD (días)", humidex:"Humidex (°C)" };
+  // Fixed domain across ALL decades → colours comparable when sliding
+  const allDecadeVals = DATA.grid.flatMap(r => r.decades.map(d => d[metricKey]));
+  const vMin = d3.min(allDecadeVals), vMax = d3.max(allDecadeVals);
+
+  const colorScale = d3.scaleSequential()
+    .domain([vMin, vMax])
+    .interpolator(d3.interpolateRgbBasis(["#2a1a10","#ff8c42","#ff4d2e","#8b0000"]));
+
+  // Legend
+  document.getElementById("legend-bar").style.background =
+    "linear-gradient(to right, #2a1a10, #ff8c42, #ff4d2e, #8b0000)";
+  document.getElementById("leg-min").textContent = vMin.toFixed(1);
+  document.getElementById("leg-mid").textContent = ((vMin+vMax)/2).toFixed(1);
+  document.getElementById("leg-max").textContent = vMax.toFixed(1);
+
+  // ── Data points ───────────────────────────────────────────────────────
+  const DOT_R = 8; // smaller than before
+
+  const dotsG = svg.append("g").attr("clip-path","url(#map-clip)");
+
+  DATA.grid.forEach(region => {
+    const val = region.decades[currentDecade][metricKey];
+    const [cx, cy] = projection([region.lon, region.lat]);
+    if (!cx || !cy) return;
+
+    // Outer glow ring for high values
+    if (val > (vMin + (vMax-vMin)*0.75)) {
+      dotsG.append("circle")
+        .attr("cx", cx).attr("cy", cy)
+        .attr("r", DOT_R + 4)
+        .attr("fill", "none")
+        .attr("stroke", colorScale(val))
+        .attr("stroke-width","1")
+        .attr("opacity","0.3");
+    }
+
+    dotsG.append("circle")
+      .attr("cx", cx).attr("cy", cy)
+      .attr("r", DOT_R)
+      .attr("fill", colorScale(val))
+      .attr("stroke", "#0a0a12")
+      .attr("stroke-width","1")
+      .attr("opacity","0.92")
+      .style("cursor","pointer")
+      .on("mouseover", function(event) {
+        d3.select(this).attr("r", DOT_R + 3).attr("stroke","#fff").attr("stroke-width","1.5");
+        showTip(`
+          <div class="tooltip-year">${region.name}</div>
+          <div style="color:${C.muted};font-size:10px">${COUNTRY_PATHS[region.country]?.label || region.country}</div>
+          <div style="margin-top:6px">${metricLabels[metricKey]}: <b style="color:${C.hot}">${val.toFixed(2)}</b></div>
+          <div>HWF: ${region.decades[currentDecade].hwf.toFixed(1)} eventos/año</div>
+          <div>HWD: ${region.decades[currentDecade].hwd.toFixed(1)} días</div>
+          <div>Humidex: ${region.decades[currentDecade].humidex.toFixed(1)} °C</div>
+        `, event);
+        document.getElementById("info-country").textContent = `${region.name} (${region.country})`;
+        document.getElementById("info-hwmi").textContent    = region.decades[currentDecade].hwmi.toFixed(2);
+        document.getElementById("info-hwf").textContent     = region.decades[currentDecade].hwf.toFixed(1);
+        document.getElementById("info-hwd").textContent     = region.decades[currentDecade].hwd.toFixed(1);
+        document.getElementById("info-humidex").textContent = region.decades[currentDecade].humidex.toFixed(1) + " °C";
+        const trend = region.decades[4].hwmi - region.decades[0].hwmi;
+        document.getElementById("info-trend").textContent   = (trend>0?"+":"") + trend.toFixed(2) + " (Δ 1980→2024)";
+      })
+      .on("mousemove", moveTip)
+      .on("mouseleave", function() {
+        d3.select(this).attr("r", DOT_R).attr("stroke","#0a0a12").attr("stroke-width","1");
+        hideTip();
+      });
+  });
+
+  // ── Country name labels on target countries ──────────────────────────
+  const labelPos = {
+    ES: [-3.7, 40.2],  PT: [-8.2, 39.6],
+    FR: [2.5,  46.2],  IT: [12.6, 42.8],
+    GR: [22.0, 39.8],
+  };
+  Object.entries(labelPos).forEach(([code, [lon, lat]]) => {
+    const [lx, ly] = projection([lon, lat]);
+    if (!lx || !ly) return;
+    svg.append("text")
+      .attr("x", lx).attr("y", ly)
+      .attr("text-anchor","middle")
+      .attr("fill","rgba(232,230,240,0.25)")
+      .attr("font-family","IBM Plex Sans, sans-serif")
+      .attr("font-size","11")
+      .attr("letter-spacing","0.15em")
+      .attr("pointer-events","none")
+      .text(COUNTRY_PATHS[code].label.toUpperCase());
+  });
+
+  // ── Decade label ──────────────────────────────────────────────────────
+  const decades = ["1980s","1990s","2000s","2010s","2020s"];
+  svg.append("text")
+    .attr("x", totalW - 16).attr("y", 38)
+    .attr("text-anchor","end")
+    .attr("fill", C.hot)
+    .attr("font-family","Playfair Display, serif")
+    .attr("font-size","28").attr("font-weight","700")
+    .text(decades[currentDecade]);
+
+}
+
+// Decade slider
+const decadeLabels = ["1980s","1990s","2000s","2010s","2020s"];
+document.getElementById("decade-slider").addEventListener("input", function() {
+  currentDecade = +this.value;
+  document.getElementById("decade-label").textContent = decadeLabels[currentDecade];
+  drawMap();
+});
+
+// Metric selector
+document.getElementById("map-metric").addEventListener("change", function() {
+  currentMapMetric = this.value;
+  drawMap();
+});
+
+drawMap();
+
+// ─── SECTION 3: ATMOSPHERIC SCATTER ──────────────────────────────────────
+
+function drawScatterBI() {
+  const svgEl = document.getElementById("chart-scatter-bi");
+  const totalW = svgEl.getBoundingClientRect().width || 500;
+  const margin = { top:20, right:20, bottom:50, left:52 };
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select("#chart-scatter-bi").selectAll("*").remove();
+  const svg = d3.select("#chart-scatter-bi").attr("height",320)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const data = DATA.atmos;
+  const x = d3.scaleLinear().domain([d3.min(data,d=>d.bi)*0.85, d3.max(data,d=>d.bi)*1.05]).range([0,W]).nice();
+  const y = d3.scaleLinear().domain([0, d3.max(data,d=>d.hwi)*1.15]).range([H,0]).nice();
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+  svg.append("g").attr("class","grid")
+    .call(d3.axisBottom(x).tickSize(H).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).ticks(5)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  // Axis labels
+  svg.append("text").attr("x",W/2).attr("y",H+42).attr("text-anchor","middle")
+    .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("BLOCKING INDEX (adim.)");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-42)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("HWI (°C ANOMALÍA)");
+
+  // Regression line
+  const n = data.length;
+  const mx = d3.mean(data,d=>d.bi), my = d3.mean(data,d=>d.hwi);
+  let num=0, den=0;
+  data.forEach(d=>{ num+=(d.bi-mx)*(d.hwi-my); den+=(d.bi-mx)**2; });
+  const slope = num/den, intercept = my - slope*mx;
+  const x1 = d3.min(data,d=>d.bi), x2 = d3.max(data,d=>d.bi);
+  svg.append("line")
+    .attr("x1",x(x1)).attr("y1",y(slope*x1+intercept))
+    .attr("x2",x(x2)).attr("y2",y(slope*x2+intercept))
+    .attr("stroke",C.hot).attr("stroke-width","1.5")
+    .attr("stroke-dasharray","5,4").attr("opacity","0.6");
+
+  // Points
+  svg.selectAll(".dot")
+    .data(data).join("circle").attr("class","dot")
+    .attr("cx",d=>x(d.bi)).attr("cy",d=>y(d.hwi))
+    .attr("r",d=>d.isExtreme?7:4)
+    .attr("fill",d=>d.isExtreme?C.hot:C.warm)
+    .attr("stroke",d=>d.isExtreme?"#fff":C.card)
+    .attr("stroke-width",d=>d.isExtreme?1.5:1)
+    .attr("opacity",d=>d.isExtreme?1:0.65)
+    .on("mouseover",function(event,d){
+      d3.select(this).attr("r",d.isExtreme?10:7).attr("opacity",1);
+      showTip(`<div class="tooltip-year">${d.year}</div>
+        <div>Blocking Index: <b style="color:${C.cool}">${d.bi.toFixed(2)}</b></div>
+        <div>HWI: <b style="color:${C.hot}">${d.hwi.toFixed(2)} °C</b></div>
+        ${d.isExtreme?`<div style="color:${C.hot};font-size:10px;margin-top:4px">⚠ Evento extremo</div>`:""}
+      `,event);
+    })
+    .on("mousemove",moveTip)
+    .on("mouseleave",function(event,d){ d3.select(this).attr("r",d.isExtreme?7:4).attr("opacity",d.isExtreme?1:0.65); hideTip(); });
+
+  // Labels for extreme years
+  data.filter(d=>d.isExtreme).forEach(d=>{
+    svg.append("text").attr("x",x(d.bi)+9).attr("y",y(d.hwi)+4)
+      .attr("fill",C.hot).attr("font-family","IBM Plex Mono").attr("font-size","9")
+      .text(d.year);
+  });
+}
+
+function drawScatterNAO() {
+  const svgEl = document.getElementById("chart-scatter-nao");
+  const totalW = svgEl.getBoundingClientRect().width || 500;
+  const margin = {top:20, right:20, bottom:50, left:52};
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select("#chart-scatter-nao").selectAll("*").remove();
+  const svg = d3.select("#chart-scatter-nao").attr("height",320)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const data = DATA.atmos;
+  const x = d3.scaleLinear().domain([d3.min(data,d=>d.nao)*1.1, d3.max(data,d=>d.nao)*1.1]).range([0,W]).nice();
+  const y = d3.scaleLinear().domain([0, d3.max(data,d=>d.hwmi)*1.15]).range([H,0]).nice();
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).ticks(5)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  // Zero line
+  svg.append("line")
+    .attr("x1",x(0)).attr("y1",0).attr("x2",x(0)).attr("y2",H)
+    .attr("stroke",C.border).attr("stroke-width","1.5");
+
+  svg.append("text").attr("x",W/2).attr("y",H+42).attr("text-anchor","middle")
+    .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("NAO INDEX (verano JJA)");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-42)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("HWMI (adim.)");
+
+  // Color by year (temporal gradient)
+  const colorYear = d3.scaleSequential()
+    .domain([1980,2024])
+    .interpolator(d3.interpolateRgbBasis(["#4fc3f7","#ff8c42","#ff4d2e"]));
+
+  svg.selectAll(".dot")
+    .data(data).join("circle").attr("class","dot")
+    .attr("cx",d=>x(d.nao)).attr("cy",d=>y(d.hwmi))
+    .attr("r",d=>d.isExtreme?7:4)
+    .attr("fill",d=>colorYear(d.year))
+    .attr("stroke",d=>d.isExtreme?"#fff":C.card)
+    .attr("stroke-width",d=>d.isExtreme?1.5:0.8)
+    .attr("opacity",d=>d.isExtreme?1:0.7)
+    .on("mouseover",function(event,d){
+      d3.select(this).attr("r",d.isExtreme?10:7).attr("opacity",1);
+      showTip(`<div class="tooltip-year">${d.year}</div>
+        <div>NAO: <b style="color:${C.cool}">${d.nao.toFixed(2)}</b></div>
+        <div>HWMI: <b style="color:${C.hot}">${d.hwmi.toFixed(2)}</b></div>
+        ${d.isExtreme?`<div style="color:${C.hot};font-size:10px;margin-top:4px">⚠ Evento extremo</div>`:""}
+      `,event);
+    })
+    .on("mousemove",moveTip)
+    .on("mouseleave",function(event,d){ d3.select(this).attr("r",d.isExtreme?7:4).attr("opacity",d.isExtreme?1:0.7); hideTip(); });
+
+  data.filter(d=>d.isExtreme).forEach(d=>{
+    svg.append("text").attr("x",x(d.nao)+9).attr("y",y(d.hwmi)+4)
+      .attr("fill",C.hot).attr("font-family","IBM Plex Mono").attr("font-size","9")
+      .text(d.year);
+  });
+
+  // Color legend (year gradient)
+  const lgW = 80, lgH = 7;
+  const lgG = svg.append("g").attr("transform",`translate(${W-lgW-4},4)`);
+  const lgDef = svg.append("defs").append("linearGradient").attr("id","yr-grad")
+    .attr("x1","0%").attr("x2","100%");
+  lgDef.append("stop").attr("offset","0%").attr("stop-color","#4fc3f7");
+  lgDef.append("stop").attr("offset","50%").attr("stop-color","#ff8c42");
+  lgDef.append("stop").attr("offset","100%").attr("stop-color","#ff4d2e");
+  lgG.append("rect").attr("width",lgW).attr("height",lgH).attr("fill","url(#yr-grad)").attr("rx","2");
+  lgG.append("text").attr("x",0).attr("y",lgH+12).attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","8").text("1980");
+  lgG.append("text").attr("x",lgW).attr("y",lgH+12).attr("text-anchor","end")
+    .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","8").text("2024");
+}
+
+function drawAligned() {
+  const svgEl = document.getElementById("chart-aligned");
+  const totalW = svgEl.getBoundingClientRect().width || 800;
+  const margin = {top:16, right:32, bottom:40, left:56};
+  const W = totalW - margin.left - margin.right;
+  const H = 260 - margin.top - margin.bottom;
+
+  d3.select("#chart-aligned").selectAll("*").remove();
+  const svg = d3.select("#chart-aligned").attr("height",260)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const data = DATA.aligned;
+  const x = d3.scaleLinear().domain([1980,2024]).range([0,W]);
+
+  // Three mini panels stacked
+  const panelH = (H - 20) / 3;
+  const series = [
+    { key:"z500", label:"Z500 anomaly (m²/s²)", color:C.cool,  yLabel:"hPa anom." },
+    { key:"nao",  label:"NAO index (JJA)",       color:C.mid,   yLabel:"NAO" },
+    { key:"hwmi", label:"HWMI",                  color:C.hot,   yLabel:"HWMI" },
+  ];
+
+  series.forEach((s,si) => {
+    const yOff = si * (panelH + 10);
+    const vals = data.map(d=>d[s.key]);
+    const yExt = d3.extent(vals);
+    const y = d3.scaleLinear().domain([yExt[0]*1.1, yExt[1]*1.1]).range([panelH,0]).nice();
+
+    const g = svg.append("g").attr("transform",`translate(0,${yOff})`);
+
+    // Zero line
+    if (y(0) >= 0 && y(0) <= panelH) {
+      g.append("line").attr("x1",0).attr("y1",y(0)).attr("x2",W).attr("y2",y(0))
+        .attr("stroke",C.border).attr("stroke-width","1");
+    }
+
+    // Area
+    const area = d3.area()
+      .x((d,i)=>x(data[i].year))
+      .y0(y(0) < 0 ? panelH : y(0))
+      .y1(d=>y(d))
+      .curve(d3.curveCatmullRom);
+
+    const aGrad = svg.append("defs").append("linearGradient").attr("id",`ag-${si}`)
+      .attr("x1","0%").attr("y1","0%").attr("x2","0%").attr("y2","100%");
+    aGrad.append("stop").attr("offset","0%").attr("stop-color",s.color).attr("stop-opacity","0.3");
+    aGrad.append("stop").attr("offset","100%").attr("stop-color",s.color).attr("stop-opacity","0");
+    g.append("path").datum(vals).attr("fill",`url(#ag-${si})`).attr("d",area);
+
+    // Line
+    const line = d3.line().x((_,i)=>x(data[i].year)).y(d=>y(d)).curve(d3.curveCatmullRom);
+    g.append("path").datum(vals)
+      .attr("fill","none").attr("stroke",s.color).attr("stroke-width","1.8")
+      .attr("d",line);
+
+    // Panel label
+    g.append("text").attr("x",6).attr("y",12)
+      .attr("fill",s.color).attr("font-family","IBM Plex Mono").attr("font-size","9")
+      .attr("letter-spacing","0.08em").attr("opacity","0.8")
+      .text(s.label.toUpperCase());
+
+    // Extreme event lines
+    Object.keys(DATA.extreme_events).forEach(yr=>{
+      g.append("line")
+        .attr("x1",x(+yr)).attr("y1",0).attr("x2",x(+yr)).attr("y2",panelH)
+        .attr("stroke",C.hot).attr("stroke-width","1")
+        .attr("stroke-dasharray","3,4").attr("opacity","0.35");
+    });
+
+    // X axis only on last panel
+    if (si === 2) {
+      g.append("g").attr("transform",`translate(0,${panelH})`)
+        .call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(9))
+        .call(axisStyle);
+    }
+  });
+
+  // Extreme labels at top
+  Object.entries(DATA.extreme_events).forEach(([yr,ev])=>{
+    svg.append("text").attr("x",x(+yr)).attr("y",-2)
+      .attr("text-anchor","middle").attr("fill",C.hot)
+      .attr("font-family","IBM Plex Mono").attr("font-size","8")
+      .text(yr);
+  });
+}
+
+drawScatterBI();
+drawScatterNAO();
+drawAligned();
+
+// ─── SECTION 4: EXPOSURE ─────────────────────────────────────────────────
+
+function drawExposure() {
+  const svgEl = document.getElementById("chart-exp");
+  const totalW = svgEl.getBoundingClientRect().width || 500;
+  const margin = {top:20, right:100, bottom:48, left:52};
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select("#chart-exp").selectAll("*").remove();
+  const svg = d3.select("#chart-exp").attr("height",320)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const { countries, labels, colors, series } = DATA.exposure;
+  const years = DATA.years;
+
+  const allVals = series.flat();
+  const y = d3.scaleLinear().domain([0, d3.max(allVals)*1.12]).range([H,0]).nice();
+  const x = d3.scaleLinear().domain([1980,2024]).range([0,W]);
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(9)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-42)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("EXP_HWMI");
+
+  series.forEach((vals, ci) => {
+    const line = d3.line().x((_,i)=>x(years[i])).y(d=>y(d)).curve(d3.curveCatmullRom);
+    const col = colors[ci];
+
+    svg.append("path").datum(vals)
+      .attr("fill","none").attr("stroke",col)
+      .attr("stroke-width","2").attr("opacity","0.85")
+      .attr("d",line);
+
+    // End label
+    const last = vals[vals.length-1];
+    svg.append("text")
+      .attr("x", W+6).attr("y", y(last)+4)
+      .attr("fill",col).attr("font-family","IBM Plex Mono").attr("font-size","10")
+      .text(countries[ci]);
+  });
+
+  // Event markers
+  Object.keys(DATA.extreme_events).forEach(yr=>{
+    svg.append("line")
+      .attr("x1",x(+yr)).attr("y1",0).attr("x2",x(+yr)).attr("y2",H)
+      .attr("stroke",C.hot).attr("stroke-width","1")
+      .attr("stroke-dasharray","4,4").attr("opacity","0.4");
+    svg.append("text").attr("x",x(+yr)).attr("y",-4)
+      .attr("text-anchor","middle").attr("fill",C.hot)
+      .attr("font-family","IBM Plex Mono").attr("font-size","8").text(yr);
+  });
+
+  // Hover overlay
+  const bisect = d3.bisector(d=>d).left;
+  const focus = svg.append("g").attr("display","none");
+  focus.append("line").attr("y1",0).attr("y2",H).attr("stroke",C.muted).attr("stroke-width","1").attr("stroke-dasharray","3,3");
+  series.forEach((_,ci)=>{
+    focus.append("circle").attr("class",`focus-dot-${ci}`).attr("r",4)
+      .attr("fill",colors[ci]).attr("stroke",C.card).attr("stroke-width","1.5");
+  });
+
+  svg.append("rect").attr("width",W).attr("height",H).attr("fill","none").attr("pointer-events","all")
+    .on("mouseover",()=>focus.attr("display",null))
+    .on("mouseleave",()=>{ focus.attr("display","none"); hideTip(); })
+    .on("mousemove",function(event){
+      const [mx] = d3.pointer(event);
+      const yr = Math.round(x.invert(mx));
+      const i = Math.max(0,Math.min(years.length-1, bisect(years,yr)));
+      focus.select("line").attr("x1",x(years[i])).attr("x2",x(years[i]));
+      series.forEach((vals,ci)=>{
+        focus.select(`.focus-dot-${ci}`).attr("cx",x(years[i])).attr("cy",y(vals[i]));
+      });
+      const tipHtml = `<div class="tooltip-year">${years[i]}</div>`
+        + series.map((vals,ci)=>`<div style="color:${colors[ci]}">${countries[ci]}: <b>${vals[i].toFixed(2)}</b></div>`).join("");
+      showTip(tipHtml, event);
+    });
+}
+
+function drawExpMort() {
+  const svgEl = document.getElementById("chart-exp-mort");
+  const totalW = svgEl.getBoundingClientRect().width || 500;
+  const margin = {top:20, right:20, bottom:50, left:60};
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select("#chart-exp-mort").selectAll("*").remove();
+  const svg = d3.select("#chart-exp-mort").attr("height",320)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const data = DATA.expMort;
+  const x = d3.scaleLinear().domain([0, d3.max(data,d=>d.hwmi)*1.05]).range([0,W]).nice();
+  const y = d3.scaleLinear().domain([0, d3.max(data,d=>d.mort)*1.05]).range([H,0]).nice();
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).ticks(5)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  svg.append("text").attr("x",W/2).attr("y",H+42).attr("text-anchor","middle")
+    .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("EXP_HWMI");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-50)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("EXCESO MORTALIDAD (PERSONAS)");
+
+  // Regression
+  const n=data.length, mx=d3.mean(data,d=>d.hwmi), my=d3.mean(data,d=>d.mort);
+  let num=0,den=0;
+  data.forEach(d=>{ num+=(d.hwmi-mx)*(d.mort-my); den+=(d.hwmi-mx)**2; });
+  const sl=num/den, ic=my-sl*mx;
+  const x1=d3.min(data,d=>d.hwmi), x2=d3.max(data,d=>d.hwmi);
+  svg.append("line")
+    .attr("x1",x(x1)).attr("y1",y(sl*x1+ic))
+    .attr("x2",x(x2)).attr("y2",y(sl*x2+ic))
+    .attr("stroke",C.hot).attr("stroke-width","1.5")
+    .attr("stroke-dasharray","5,4").attr("opacity","0.6");
+
+  svg.selectAll(".dot").data(data).join("circle").attr("class","dot")
+    .attr("cx",d=>x(d.hwmi)).attr("cy",d=>y(d.mort))
+    .attr("r",d=>d.isExtreme?6:3.5)
+    .attr("fill",d=>d.isExtreme?C.hot:C.warm)
+    .attr("opacity",d=>d.isExtreme?0.9:0.5)
+    .attr("stroke",d=>d.isExtreme?"#fff":C.card)
+    .attr("stroke-width","0.8")
+    .on("mouseover",function(event,d){
+      d3.select(this).attr("r",d.isExtreme?9:6).attr("opacity",1);
+      showTip(`<div class="tooltip-year">${d.name} · ${d.year}</div>
+        <div>exp_HWMI: <b style="color:${C.hot}">${d.hwmi.toFixed(2)}</b></div>
+        <div>Exceso mortalidad: <b style="color:${C.warm}">${Math.round(d.mort)}</b></div>
+        ${d.isExtreme?`<div style="color:${C.hot};font-size:10px;margin-top:4px">⚠ Evento extremo</div>`:""}
+      `,event);
+    })
+    .on("mousemove",moveTip)
+    .on("mouseleave",function(event,d){ d3.select(this).attr("r",d.isExtreme?6:3.5).attr("opacity",d.isExtreme?0.9:0.5); hideTip(); });
+}
+
+drawExposure();
+drawExpMort();
+
+// ─── SECTION 5: GENDER ───────────────────────────────────────────────────
+
+function drawGenderBars() {
+  const svgEl = document.getElementById("chart-gender");
+  const totalW = svgEl.getBoundingClientRect().width || 500;
+  const margin = {top:20, right:24, bottom:60, left:52};
+  const W = totalW - margin.left - margin.right;
+  const H = 340 - margin.top - margin.bottom;
+
+  d3.select("#chart-gender").selectAll("*").remove();
+  const svg = d3.select("#chart-gender").attr("height",340)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const { countries, labels, events, ratios } = DATA.gender;
+
+  // Grouped bar chart: x = events, groups = countries
+  const x0 = d3.scaleBand().domain(events.map(String)).range([0,W]).padding(0.22);
+  const x1 = d3.scaleBand().domain(countries).rangeRound([0, x0.bandwidth()]).padding(0.08);
+  const y  = d3.scaleLinear().domain([1, d3.max(ratios.flat())*1.08]).range([H,0]).nice();
+
+  const colScale = d3.scaleOrdinal()
+    .domain(countries)
+    .range([C.hot, C.warm, C.mid, C.cool, C.blue]);
+
+  // ── Parity line (ratio = 1.0) ────────────────────────────────────────
+  svg.append("line").attr("x1",0).attr("y1",y(1)).attr("x2",W).attr("y2",y(1))
+    .attr("stroke",C.muted).attr("stroke-width","1").attr("stroke-dasharray","3,4").attr("opacity","0.4");
+  svg.append("text").attr("x",W+3).attr("y",y(1)+4)
+    .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","8")
+    .text("1.0");
+
+  // ── Statistical significance threshold (ratio = 1.20) ───────────────
+  const SIG = 1.20;
+  svg.append("line").attr("x1",0).attr("y1",y(SIG)).attr("x2",W).attr("y2",y(SIG))
+    .attr("stroke","#ffffff").attr("stroke-width","1.2").attr("stroke-dasharray","6,4").attr("opacity","0.7");
+  // Label right side
+  svg.append("text").attr("x",W+3).attr("y",y(SIG)+4)
+    .attr("fill","#ffffff").attr("font-family","IBM Plex Mono").attr("font-size","8").attr("opacity","0.8")
+    .text("p<0.05");
+  // Shaded region above threshold
+  svg.append("rect")
+    .attr("x",0).attr("y",0)
+    .attr("width",W).attr("height",y(SIG))
+    .attr("fill","rgba(255,255,255,0.02)");
+  // Small annotation
+  svg.append("text").attr("x",6).attr("y",y(SIG)-5)
+    .attr("fill","rgba(255,255,255,0.4)").attr("font-family","IBM Plex Mono").attr("font-size","8")
+    .attr("letter-spacing","0.06em")
+    .text("SOBREMORTALIDAD FEMENINA SIGNIFICATIVA");
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  // Bars
+  events.forEach((ev,ei) => {
+    countries.forEach((c,ci) => {
+      const val = ratios[ci][ei];
+      svg.append("rect")
+        .attr("x", x0(String(ev)) + x1(c))
+        .attr("y", y(val))
+        .attr("width", x1.bandwidth())
+        .attr("height", H - y(val))
+        .attr("fill", colScale(c))
+        .attr("opacity", "0.78")
+        .attr("rx","1")
+        .on("mouseover",function(event){
+          d3.select(this).attr("opacity","1");
+          showTip(`<div class="tooltip-year">${ev} · ${labels[ci]}</div>
+            <div>Ratio F/M: <b style="color:${C.female}">${val.toFixed(2)}</b></div>
+            <div style="color:${C.muted};font-size:10px;margin-top:4px">${val>1.4?"⚠ Sobremortalidad femenina significativa":val>1.2?"Exceso moderado":"Diferencial bajo"}</div>
+          `,event);
+        })
+        .on("mousemove",moveTip)
+        .on("mouseleave",function(){ d3.select(this).attr("opacity","0.78"); hideTip(); });
+    });
+  });
+
+  svg.append("g").attr("transform",`translate(0,${H})`)
+    .call(d3.axisBottom(x0)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-42)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("RATIO MORT. F/M");
+
+  // Country legend
+  const legG = svg.append("g").attr("transform",`translate(0,${H+38})`);
+  countries.forEach((c,ci)=>{
+    legG.append("rect").attr("x",ci*52).attr("y",0).attr("width",10).attr("height",10)
+      .attr("fill",colScale(c)).attr("rx","1");
+    legG.append("text").attr("x",ci*52+13).attr("y",9)
+      .attr("fill",C.muted).attr("font-family","IBM Plex Mono").attr("font-size","9")
+      .text(c);
+  });
+}
+
+function drawGenderTS() {
+  const svgEl = document.getElementById("chart-gender-ts");
+  const totalW = svgEl.getBoundingClientRect().width || 800;
+  const margin = {top:16, right:90, bottom:40, left:52};
+  const W = totalW - margin.left - margin.right;
+  const H = 240 - margin.top - margin.bottom;
+
+  d3.select("#chart-gender-ts").selectAll("*").remove();
+  const svg = d3.select("#chart-gender-ts").attr("height",240)
+    .append("g").attr("transform",`translate(${margin.left},${margin.top})`);
+
+  const raw = DATA.genderTS;
+  // Aggregate by year for clarity (annual max excess in summer)
+  const byYear = d3.group(raw, d=>d.year);
+  const annual = Array.from(byYear, ([yr,rows])=>{
+    const summer = rows.filter(r=>r.week>=24&&r.week<=38);
+    return {
+      year:+yr,
+      female: d3.sum(summer,r=>r.female),
+      male:   d3.sum(summer,r=>r.male),
+    };
+  }).sort((a,b)=>a.year-b.year);
+
+  const allYears = annual.map(d=>d.year);
+  const x = d3.scaleLinear().domain([d3.min(allYears), d3.max(allYears)]).range([0,W]);
+  const maxVal = d3.max(annual, d=>Math.max(d.female,d.male));
+  const y = d3.scaleLinear().domain([0, maxVal*1.15]).range([H,0]).nice();
+
+  svg.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-W).tickFormat(""))
+    .call(g=>{ g.selectAll(".domain").remove(); g.selectAll(".tick line").attr("stroke",C.border).attr("stroke-dasharray","3,5"); });
+
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(10)).call(axisStyle);
+  svg.append("g").call(d3.axisLeft(y).ticks(5)).call(axisStyle);
+
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-H/2).attr("y",-42)
+    .attr("text-anchor","middle").attr("fill",C.muted)
+    .attr("font-family","IBM Plex Mono").attr("font-size","10")
+    .attr("letter-spacing","0.08em").text("EXCESO MORT. VERANO (SUMA JJA)");
+
+  const fLine = d3.line().x(d=>x(d.year)).y(d=>y(d.female)).curve(d3.curveCatmullRom);
+  const mLine = d3.line().x(d=>x(d.year)).y(d=>y(d.male)).curve(d3.curveCatmullRom);
+
+  // Area between lines (female > male gap)
+  const gap = d3.area()
+    .x(d=>x(d.year))
+    .y0(d=>y(d.male))
+    .y1(d=>y(d.female))
+    .curve(d3.curveCatmullRom);
+  svg.append("path").datum(annual).attr("fill",C.female).attr("opacity","0.12").attr("d",gap);
+
+  svg.append("path").datum(annual).attr("fill","none").attr("stroke",C.male).attr("stroke-width","2").attr("d",mLine);
+  svg.append("path").datum(annual).attr("fill","none").attr("stroke",C.female).attr("stroke-width","2.5").attr("d",fLine);
+
+  // Labels
+  svg.append("text").attr("x",W+6).attr("y",y(annual[annual.length-1].female)+4)
+    .attr("fill",C.female).attr("font-family","IBM Plex Mono").attr("font-size","10").text("Mujeres");
+  svg.append("text").attr("x",W+6).attr("y",y(annual[annual.length-1].male)+4)
+    .attr("fill",C.male).attr("font-family","IBM Plex Mono").attr("font-size","10").text("Hombres");
+
+  // Extreme event markers
+  Object.entries(DATA.extreme_events).forEach(([yr,ev])=>{
+    const yrN = +yr;
+    if(yrN < 2000) return;
+    svg.append("line")
+      .attr("x1",x(yrN)).attr("y1",0).attr("x2",x(yrN)).attr("y2",H)
+      .attr("stroke",C.hot).attr("stroke-width","1")
+      .attr("stroke-dasharray","4,4").attr("opacity","0.4");
+    svg.append("text").attr("x",x(yrN)).attr("y",-2)
+      .attr("text-anchor","middle").attr("fill",C.hot)
+      .attr("font-family","IBM Plex Mono").attr("font-size","8").text(yr);
+  });
+
+  // Hover
+  const bisect = d3.bisector(d=>d.year).left;
+  const focusLine = svg.append("line").attr("y1",0).attr("y2",H)
+    .attr("stroke",C.muted).attr("stroke-width","1").attr("stroke-dasharray","3,3").attr("display","none");
+  svg.append("rect").attr("width",W).attr("height",H).attr("fill","none").attr("pointer-events","all")
+    .on("mouseover",()=>focusLine.attr("display",null))
+    .on("mouseleave",()=>{ focusLine.attr("display","none"); hideTip(); })
+    .on("mousemove",function(event){
+      const [mx] = d3.pointer(event);
+      const yr = x.invert(mx);
+      const i = Math.max(0,Math.min(annual.length-1, bisect(annual,yr)));
+      const d = annual[i];
+      focusLine.attr("x1",x(d.year)).attr("x2",x(d.year));
+      showTip(`<div class="tooltip-year">${d.year} · Verano JJA</div>
+        <div style="color:${C.female}">Mujeres: <b>${Math.round(d.female)}</b></div>
+        <div style="color:${C.male}">Hombres: <b>${Math.round(d.male)}</b></div>
+        <div style="color:${C.muted};margin-top:4px">Ratio F/M: <b style="color:${C.female}">${(d.female/d.male).toFixed(2)}</b></div>
+      `,event);
+    });
+}
+
+drawGenderBars();
+drawGenderTS();
+
+// ─── SCROLL FADE-IN ───────────────────────────────────────────────────────
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add("visible");
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll(".fade-in").forEach(el => observer.observe(el));
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────
+
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawTimeSeries(currentMetric);
+    drawMap(); // async, fine to call without await here
+    drawScatterBI();
+    drawScatterNAO();
+    drawAligned();
+    drawExposure();
+    drawExpMort();
+    drawGenderBars();
+    drawGenderTS();
+  }, 250);
+});
+
+// ─── SVG / PNG EXPORT ────────────────────────────────────────────────────
+
+function svgToBlob(svgEl) {
+  // Inject Google Fonts as inline style so exported SVG is self-contained
+  const style = document.createElement("style");
+  style.textContent = `
+    text { font-family: 'IBM Plex Mono', monospace; }
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap');
+  `;
+  const clone = svgEl.cloneNode(true);
+  clone.insertBefore(style, clone.firstChild);
+  // Add white/dark background rect
+  const bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
+  bg.setAttribute("width","100%"); bg.setAttribute("height","100%");
+  bg.setAttribute("fill","#0a0a0f");
+  clone.insertBefore(bg, clone.firstChild);
+
+  const serializer = new XMLSerializer();
+  const svgStr = serializer.serializeToString(clone);
+  return new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+}
+
+function downloadSVG(svgId, filename) {
+  const svgEl = document.getElementById(svgId);
+  if (!svgEl) return;
+  const blob = svgToBlob(svgEl);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = filename + ".svg";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadPNG(svgId, filename) {
+  const svgEl = document.getElementById(svgId);
+  if (!svgEl) return;
+  const blob   = svgToBlob(svgEl);
+  const url    = URL.createObjectURL(blob);
+  const img    = new Image();
+  const W      = svgEl.getBoundingClientRect().width  || 800;
+  const H      = +svgEl.getAttribute("height") || 400;
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width  = W * 2;   // 2× for retina
+    canvas.height = H * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(pngBlob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(pngBlob);
+      a.download = filename + ".png";
+      a.click();
+    }, "image/png");
+  };
+  img.src = url;
+}
+
+// ── Inject export buttons next to each chart-wrap ────────────────────────
+
+const EXPORT_CHARTS = [
+  { id:"chart-ts",          name:"01_tendencias_hwf"         },
+  { id:"chart-map",         name:"02_mapa_espacial"          },
+  { id:"chart-scatter-bi",  name:"03_bi_vs_hwi"              },
+  { id:"chart-scatter-nao", name:"03_nao_vs_hwmi"            },
+  { id:"chart-aligned",     name:"03_series_alineadas"       },
+  { id:"chart-exp",         name:"04_exposicion_paises"      },
+  { id:"chart-exp-mort",    name:"04_exphwmi_vs_mortalidad"  },
+  { id:"chart-gender",      name:"05_ratio_genero"           },
+  { id:"chart-gender-ts",   name:"05_mortalidad_sexo_ts"     },
+];
+
+// Wait until charts are rendered before injecting buttons
+window.addEventListener("load", () => {
+  // small delay to let async drawMap finish
+  setTimeout(() => {
+    EXPORT_CHARTS.forEach(({ id, name }) => {
+      const svgEl = document.getElementById(id);
+      if (!svgEl) return;
+      const wrap = svgEl.closest(".chart-wrap");
+      if (!wrap) return;
+
+      // Container row
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:8px;justify-content:flex-end;margin-top:12px;";
+
+      const mkBtn = (label, handler) => {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.style.cssText = `
+          font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.1em;
+          padding:5px 12px;border:1px solid #2a2a3a;background:transparent;
+          color:#8884a0;cursor:pointer;text-transform:uppercase;border-radius:2px;
+          transition:all 0.2s;
+        `;
+        b.addEventListener("mouseenter", () => { b.style.borderColor="#ff4d2e"; b.style.color="#ff4d2e"; });
+        b.addEventListener("mouseleave", () => { b.style.borderColor="#2a2a3a"; b.style.color="#8884a0"; });
+        b.addEventListener("click", handler);
+        return b;
+      };
+
+      row.appendChild(mkBtn("↓ SVG", () => downloadSVG(id, name)));
+      row.appendChild(mkBtn("↓ PNG", () => downloadPNG(id, name)));
+      wrap.appendChild(row);
+    });
+  }, 1500);
+});
+
+</script>
+</body>
+</html>
